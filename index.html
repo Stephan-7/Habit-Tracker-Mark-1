@@ -36,21 +36,20 @@
         const Trash2 = (p) => <Icon {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
         const Trophy = (p) => <Icon {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></Icon>;
         const Edit2 = (p) => <Icon {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
-        const MoreHorizontal = (p) => <Icon {...p}><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></Icon>;
         const X = (p) => <Icon {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
 
         // --- CONSTANTS ---
         const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         
         const COLORS = [
-            { name: 'Orange', bg: 'bg-orange-100', text: 'text-orange-600', dot: 'bg-orange-500' },
-            { name: 'Emerald', bg: 'bg-emerald-100', text: 'text-emerald-600', dot: 'bg-emerald-500' },
-            { name: 'Blue', bg: 'bg-blue-100', text: 'text-blue-600', dot: 'bg-blue-500' },
-            { name: 'Sky', bg: 'bg-sky-100', text: 'text-sky-600', dot: 'bg-sky-500' },
-            { name: 'Rose', bg: 'bg-rose-100', text: 'text-rose-600', dot: 'bg-rose-500' },
-            { name: 'Purple', bg: 'bg-purple-100', text: 'text-purple-600', dot: 'bg-purple-500' },
-            { name: 'Yellow', bg: 'bg-yellow-100', text: 'text-yellow-600', dot: 'bg-yellow-500' },
-            { name: 'Gray', bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-500' },
+            { name: 'Orange', bg: 'bg-orange-100', text: 'text-orange-600', bar: 'bg-orange-500', dot: 'bg-orange-500' },
+            { name: 'Emerald', bg: 'bg-emerald-100', text: 'text-emerald-600', bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
+            { name: 'Blue', bg: 'bg-blue-100', text: 'text-blue-600', bar: 'bg-blue-500', dot: 'bg-blue-500' },
+            { name: 'Sky', bg: 'bg-sky-100', text: 'text-sky-600', bar: 'bg-sky-500', dot: 'bg-sky-500' },
+            { name: 'Rose', bg: 'bg-rose-100', text: 'text-rose-600', bar: 'bg-rose-500', dot: 'bg-rose-500' },
+            { name: 'Purple', bg: 'bg-purple-100', text: 'text-purple-600', bar: 'bg-purple-500', dot: 'bg-purple-500' },
+            { name: 'Yellow', bg: 'bg-yellow-100', text: 'text-yellow-600', bar: 'bg-yellow-500', dot: 'bg-yellow-500' },
+            { name: 'Gray', bg: 'bg-gray-100', text: 'text-gray-600', bar: 'bg-gray-500', dot: 'bg-gray-500' },
         ];
 
         const EMOJIS = ["✍️", "💪", "📚", "💧", "🚫", "🏃", "🧘", "💊", "🥦", "💰", "🎸", "🧹", "🚭", "🧠", "🦷", "🐶", "👨‍💻", "🎨", "🌿", "⏰"];
@@ -81,7 +80,17 @@
 
         // --- COMPONENTS ---
 
-        // 1. Modal for Adding/Editing Habits
+        // 1. Progress Bar Component
+        const MiniProgressBar = ({ percentage, colorClass }) => (
+            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div 
+                    className={`h-1.5 rounded-full transition-all duration-500 ease-out ${colorClass}`} 
+                    style={{ width: `${percentage}%` }}
+                ></div>
+            </div>
+        );
+
+        // 2. Modal for Adding/Editing Habits
         const HabitModal = ({ isOpen, onClose, onSave, initialData, onDelete }) => {
             const [name, setName] = useState('');
             const [selectedEmoji, setSelectedEmoji] = useState(EMOJIS[0]);
@@ -96,7 +105,7 @@
                     } else {
                         setName('');
                         setSelectedEmoji(EMOJIS[0]);
-                        setSelectedColor(COLORS[5]); // Default purple
+                        setSelectedColor(COLORS[5]); 
                     }
                 }
             }, [isOpen, initialData]);
@@ -124,7 +133,6 @@
                         </div>
                         
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            {/* Name Input */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Habit Name</label>
                                 <input 
@@ -136,8 +144,6 @@
                                     placeholder="e.g., Meditate"
                                 />
                             </div>
-
-                            {/* Emoji Picker */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Icon</label>
                                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
@@ -153,8 +159,6 @@
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Color Picker */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Color</label>
                                 <div className="flex flex-wrap gap-3">
@@ -169,8 +173,6 @@
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Actions */}
                             <div className="flex gap-3 pt-2">
                                 {initialData && (
                                     <button 
@@ -194,14 +196,13 @@
             );
         };
 
-        // 2. Main Application
+        // 3. Main Application
         const App = () => {
             const [currentDate, setCurrentDate] = useState(new Date());
             const [selectedDate, setSelectedDate] = useState(new Date());
             const [habits, setHabits] = useLocalStorage('habit-os-data', DEFAULT_HABITS);
             const [completions, setCompletions] = useLocalStorage('habit-os-completions', {});
             
-            // Modal State
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [editingHabit, setEditingHabit] = useState(null);
 
@@ -213,7 +214,16 @@
             const formatDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             const selectedDateKey = formatDateKey(selectedDate);
 
-            // Handlers
+            // Calculate Monthly Stats for Sidebar
+            const getHabitProgress = (habitId) => {
+                let count = 0;
+                for(let d=1; d<=daysInMonth; d++) {
+                    const k = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    if(completions[k]?.includes(habitId)) count++;
+                }
+                return Math.round((count / daysInMonth) * 100);
+            };
+
             const handleSaveHabit = (habitData) => {
                 if (editingHabit) {
                     setHabits(habits.map(h => h.id === habitData.id ? habitData : h));
@@ -238,7 +248,6 @@
                 });
             };
 
-            // Render Calendar
             const renderCalendar = () => {
                 const days = [];
                 for(let i=0; i<firstDay; i++) days.push(<div key={`empty-${i}`} className="h-24 bg-gray-50/50 border-b border-r border-gray-100"></div>);
@@ -292,27 +301,36 @@
 
                         <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
                             <div className="flex justify-between items-end mb-4 px-2">
-                                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Your Habits</h2>
+                                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Monthly Progress</h2>
                                 <button onClick={() => { setEditingHabit(null); setIsModalOpen(true); }} className="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition">
                                     <Plus size={18} />
                                 </button>
                             </div>
                             
-                            <div className="space-y-2">
-                                {habits.map(habit => (
-                                    <div key={habit.id} className="group flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xl">{habit.icon}</span>
-                                            <span className="text-sm font-medium text-gray-700">{habit.name}</span>
+                            <div className="space-y-3">
+                                {habits.map(habit => {
+                                    const progress = getHabitProgress(habit.id);
+                                    return (
+                                        <div key={habit.id} className="group p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xl">{habit.icon}</span>
+                                                    <span className="text-sm font-medium text-gray-700">{habit.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-gray-400">{progress}%</span>
+                                                    <button 
+                                                        onClick={() => { setEditingHabit(habit); setIsModalOpen(true); }}
+                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600"
+                                                    >
+                                                        <Edit2 size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <MiniProgressBar percentage={progress} colorClass={habit.color.bar} />
                                         </div>
-                                        <button 
-                                            onClick={() => { setEditingHabit(habit); setIsModalOpen(true); }}
-                                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600 p-1"
-                                        >
-                                            <Edit2 size={14} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 {habits.length === 0 && <div className="text-center py-10 text-gray-400 text-sm italic">No habits yet. Click + to add one.</div>}
                             </div>
                         </div>
@@ -369,7 +387,7 @@
                             })}
                         </div>
                         
-                        {/* Mobile Add Button (Visible only on small screens) */}
+                        {/* Mobile Add Button */}
                         <div className="md:hidden p-4 border-t border-gray-200">
                             <button onClick={() => { setEditingHabit(null); setIsModalOpen(true); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg">
                                 + Add New Habit
