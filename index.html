@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Control</title>
+    <title>Habit OS Dual</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -67,6 +67,8 @@
         const ArrowUp = p => <Icon {...p}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></Icon>;
         const ArrowDown = p => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></Icon>;
         const Sort = p => <Icon {...p}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></Icon>;
+        const BarChart2 = p => <Icon {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
+        const Grid = p => <Icon {...p}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></Icon>;
 
         // --- MEGA PALETTE ---
         const COLORS = [
@@ -88,7 +90,6 @@
             { name: 'Rose', bg: 'bg-rose-100', text: 'text-rose-600', bar: 'bg-rose-500', dot: 'bg-rose-500', darkBg: 'dark:bg-rose-900/30', darkText: 'dark:text-rose-400' },
         ];
 
-        // --- EXPANDED EMOJI LIST ---
         const EMOJIS = [
             "✍️", "💪", "📚", "💧", "🧘", "🏃", "🙏", "📱", "🥦", "💊", "💰", "🧠", "🚭", "🎨", "🎸", "🧹", "🦷", "🐶", "🌿", "⏰", "💤", "🌞", "🎓", "💼", "🛒", "⚔️", "🔥", "💎", "✈️", "🚀", "🎵", "📷", "⚽", "🏀", "🥗", "🍳", "🍺", "🍷", "🏠", "🛁", "🎁", "❤️", "✨", "💡", "🔌", "🔧", "💊", "🧬", "🧸", "🚲", "🏖️", "🏔️", "👟", "👞", "💄", "🧴", "🧼", "📝", "📵", "🚭"
         ];
@@ -143,6 +144,47 @@
                                 {week.map((day) => (
                                     <div key={day.key} title={`${day.key}: ${Math.round(day.val * 100)}%`} className={`w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-[2px] transition-colors ${day.isFuture ? 'bg-transparent' : day.val === 0 ? 'bg-gray-100 dark:bg-dark-700' : day.val === 1 ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]' : day.val >= 0.7 ? 'bg-emerald-400' : day.val >= 0.4 ? 'bg-emerald-300' : 'bg-emerald-200 dark:bg-emerald-900'}`}></div>
                                 ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Consistency Chart (Restored) ---
+        const ConsistencyChart = ({ completions, habits }) => {
+            const data = useMemo(() => {
+                if (habits.length === 0) return [];
+                const days = 30;
+                const result = [];
+                const today = new Date();
+                for (let i = days - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(today.getDate() - i);
+                    const dateKey = formatDateKey(d);
+                    const dueHabits = habits.filter(h => {
+                         if (h.isTask && h.targetDate !== dateKey) return false;
+                         if (!h.isTask && h.frequency && !h.frequency.includes(d.getDay())) return false;
+                         return true;
+                    });
+                    
+                    const completedCount = (completions[dateKey] || []).filter(id => habits.some(h => h.id === id)).length;
+                    const totalDue = dueHabits.length || 1;
+                    const percentage = Math.min(completedCount / totalDue, 1);
+                    result.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, fullDate: d.toLocaleDateString(), value: percentage });
+                }
+                return result;
+            }, [completions, habits]);
+
+            return (
+                <div className="h-full w-full overflow-x-auto pb-1 scrollbar-thin">
+                    <div className="flex items-end h-full gap-2 min-w-max px-1">
+                        {data.map((d, i) => (
+                            <div key={i} className="flex flex-col items-center w-6 flex-shrink-0 h-full justify-end group">
+                                <div className="w-full h-full flex items-end relative bg-gray-50 dark:bg-dark-800 rounded-md overflow-hidden">
+                                    <div className={`w-full rounded-b-md rounded-t-sm transition-all duration-500 ${d.value === 1 ? 'bg-emerald-400' : d.value >= 0.75 ? 'bg-indigo-400' : d.value >= 0.4 ? 'bg-indigo-300' : d.value > 0 ? 'bg-orange-300' : 'bg-transparent'}`} style={{ height: `${Math.max(d.value * 100, 0)}%` }}></div>
+                                </div>
+                                <span className="text-[9px] text-gray-400 mt-1.5 font-medium whitespace-nowrap">{d.label}</span>
                             </div>
                         ))}
                     </div>
@@ -229,6 +271,7 @@
             const [editingHabit, setEditingHabit] = useState(null);
             const [detailHabit, setDetailHabit] = useState(null);
             const [isReorderMode, setIsReorderMode] = useState(false);
+            const [chartMode, setChartMode] = useState('heatmap'); // 'heatmap' or 'bar'
 
             useEffect(() => { localStorage.setItem('habit_user_id', userId); }, [userId]);
             useEffect(() => { if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } }, [darkMode]);
@@ -266,18 +309,15 @@
             const handleSaveNote = (habitId, text) => { const key = `${habitId}_${formatDateKey(selectedDate)}`; const newNotes = { ...dailyNotes, [key]: text }; updateData(habits, completions, newNotes); };
             const toggleHabit = (id, dateKey) => { const current = completions[dateKey] || []; const newC = { ...completions, [dateKey]: current.includes(id) ? current.filter(x => x !== id) : [...current, id] }; updateData(habits, newC, dailyNotes); };
             
-            // --- REORDER LOGIC ---
             const moveHabit = (id, direction) => {
                 const index = habits.findIndex(h => h.id === id);
                 if (index < 0) return;
                 const newHabits = [...habits];
                 const targetIndex = index + direction;
                 if (targetIndex >= 0 && targetIndex < newHabits.length) {
-                    // Swap order
                     const temp = newHabits[index].order || index;
                     newHabits[index].order = newHabits[targetIndex].order || targetIndex;
                     newHabits[targetIndex].order = temp;
-                    // Swap in array
                     [newHabits[index], newHabits[targetIndex]] = [newHabits[targetIndex], newHabits[index]];
                     updateData(newHabits, completions, dailyNotes);
                 }
@@ -294,7 +334,6 @@
                 if (h.frequency && !h.frequency.includes(selectedDate.getDay())) return false;
                 return true;
             }).sort((a, b) => {
-                // If Reorder Mode enabled or explicit Order exists, prioritize Order. Else Time.
                 if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
                 if (a.time && !b.time) return -1; if (!a.time && b.time) return 1; if (a.time && b.time) return a.time.localeCompare(b.time); return 0;
             });
@@ -336,7 +375,18 @@
                             <div className="flex items-center gap-3"><button onClick={() => setDarkMode(!darkMode)} className="p-2 text-gray-400 hover:text-indigo-500 transition-colors">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button><button onClick={() => {const now=new Date(); setCurrentDate(now); setSelectedDate(now);}} className="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-full">Today</button></div>
                         </header>
                         <div className="flex-1 overflow-auto min-h-0"><div className="grid grid-cols-7 border-b border-gray-100 dark:border-dark-700 sticky top-0 bg-white/95 dark:bg-dark-900/95 z-20 text-center py-2 text-xs font-bold text-gray-400 uppercase">{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d}>{d}</div>)}</div><div className="grid grid-cols-7 auto-rows-fr">{renderCalendar()}</div></div>
-                        <div className="h-32 md:h-44 bg-white dark:bg-dark-900 border-t border-gray-100 dark:border-dark-700 p-2 md:p-4 flex flex-col flex-shrink-0 relative z-20"><div className="flex items-center gap-2 mb-2"><Cloud size={16} className="text-gray-400" /><h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Year in Pixels</h3></div><div className="flex-1"><YearHeatmap completions={completions} habits={habits} /></div></div>
+                        <div className="h-32 md:h-44 bg-white dark:bg-dark-900 border-t border-gray-100 dark:border-dark-700 p-2 md:p-4 flex flex-col flex-shrink-0 relative z-20">
+                            <div className="flex items-center gap-2 mb-2 justify-between">
+                                <div className="flex items-center gap-2"><Cloud size={16} className="text-gray-400" /><h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Consistency</h3></div>
+                                <div className="flex bg-gray-100 dark:bg-dark-800 rounded p-0.5">
+                                    <button onClick={() => setChartMode('bar')} className={`p-1 rounded ${chartMode === 'bar' ? 'bg-white dark:bg-dark-700 shadow text-indigo-500' : 'text-gray-400'}`}><BarChart2 size={14}/></button>
+                                    <button onClick={() => setChartMode('heatmap')} className={`p-1 rounded ${chartMode === 'heatmap' ? 'bg-white dark:bg-dark-700 shadow text-indigo-500' : 'text-gray-400'}`}><Grid size={14}/></button>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-h-0">
+                                {chartMode === 'heatmap' ? <YearHeatmap completions={completions} habits={habits} /> : <ConsistencyChart completions={completions} habits={habits} />}
+                            </div>
+                        </div>
                     </div>
 
                     {/* RIGHT SIDEBAR (Agenda) */}
