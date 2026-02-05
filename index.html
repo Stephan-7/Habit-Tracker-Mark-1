@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Command</title>
+    <title>Habit OS Clean</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -170,7 +170,7 @@
             );
         };
 
-        // --- NEW: FOCUS TIMER COMPONENT ---
+        // --- FOCUS TIMER COMPONENT ---
         const FocusTimer = ({ habit, onClose, onComplete }) => {
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
@@ -210,6 +210,7 @@
             const [type, setType] = useState('habit');
             const [category, setCategory] = useState('General');
             const [difficulty, setDifficulty] = useState('easy');
+            const [useTimer, setUseTimer] = useState(false);
             const [time, setTime] = useState('');
             const [frequency, setFrequency] = useState([0,1,2,3,4,5,6]); 
             const [targetDate, setTargetDate] = useState(formatDateKey(new Date()));
@@ -221,9 +222,10 @@
                         if(initialData.type) setType(initialData.type); else setType(initialData.isTask ? 'task' : 'habit');
                         setCategory(initialData.category || 'General');
                         setDifficulty(initialData.difficulty || 'easy');
+                        setUseTimer(!!initialData.useTimer);
                         setTime(initialData.time || ''); setFrequency(initialData.frequency || [0,1,2,3,4,5,6]); setTargetDate(initialData.targetDate || formatDateKey(new Date()));
                     } else {
-                        setName(''); setIcon(EMOJIS[0]); setColor(COLORS[11]); setType('habit'); setCategory('General'); setDifficulty('easy'); setTime(''); setFrequency([0,1,2,3,4,5,6]);
+                        setName(''); setIcon(EMOJIS[0]); setColor(COLORS[11]); setType('habit'); setCategory('General'); setDifficulty('easy'); setUseTimer(false); setTime(''); setFrequency([0,1,2,3,4,5,6]);
                     }
                 }
             }, [isOpen, initialData]);
@@ -235,7 +237,7 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-dark-800 rounded-2xl shadow-xl w-full max-w-sm modal-animate overflow-hidden max-h-[90vh] overflow-y-auto">
                         <div className="px-6 py-4 border-b border-gray-100 dark:border-dark-700 flex justify-between items-center"><h3 className="font-bold text-gray-800 dark:text-gray-100">{initialData ? 'Edit' : 'New'}</h3><button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button></div>
-                        <form onSubmit={(e) => { e.preventDefault(); onSave({ id: initialData?.id, name, icon, color, type, category, difficulty, time, frequency, targetDate }); onClose(); }} className="p-6 space-y-5">
+                        <form onSubmit={(e) => { e.preventDefault(); onSave({ id: initialData?.id, name, icon, color, type, category, difficulty, useTimer, time, frequency, targetDate }); onClose(); }} className="p-6 space-y-5">
                             <div className="grid grid-cols-4 gap-1 bg-gray-100 dark:bg-dark-900 p-1 rounded-lg">
                                 {['habit', 'task', 'event', 'birthday'].map(t => (<button key={t} type="button" onClick={() => setType(t)} className={`py-2 rounded-md text-[10px] font-bold uppercase transition-all ${type === t ? 'bg-white dark:bg-dark-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`}>{t === 'habit' ? 'Routine' : t}</button>))}
                             </div>
@@ -251,8 +253,24 @@
                                 </div>
                             </div>
 
-                            {(type === 'habit' || type === 'task') && (<div><label className="block text-xs font-bold text-gray-400 uppercase mb-2">Difficulty</label><div className="flex gap-2">{['easy', 'medium', 'hard'].map(d => (<button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold border capitalize transition-all ${difficulty === d ? d==='hard' ? 'bg-yellow-50 border-yellow-500 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'border-gray-200 dark:border-dark-700 text-gray-400'}`}>{d==='hard'?'Heroic':d}</button>))}</div></div>)}
-                            <div className="flex gap-3"><div className="flex-1"><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Time</label><input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none text-sm dark:text-white" /></div>{(type !== 'habit') && <div className="flex-1"><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label><input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none text-sm dark:text-white" /></div>}</div>
+                            {(type === 'habit' || type === 'task') && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Difficulty & Tools</label>
+                                <div className="flex gap-2 mb-3">
+                                    {['easy', 'medium', 'hard'].map(d => (<button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold border capitalize transition-all ${difficulty === d ? d==='hard' ? 'bg-yellow-50 border-yellow-500 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'border-gray-200 dark:border-dark-700 text-gray-400'}`}>{d==='hard'?'Heroic':d}</button>))}
+                                </div>
+                                <div onClick={() => setUseTimer(!useTimer)} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${useTimer ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/20' : 'bg-gray-50 border-gray-200 dark:bg-dark-900 dark:border-dark-700'}`}>
+                                    <div className="flex items-center gap-2"><Clock size={16} className={useTimer ? 'text-indigo-500' : 'text-gray-400'} /><span className={`text-xs font-bold ${useTimer ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}>Enable Focus Timer</span></div>
+                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${useTimer ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-dark-600'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${useTimer ? 'translate-x-5' : ''}`}></div></div>
+                                </div>
+                            </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <div className="flex-1"><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Time</label><input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none text-sm dark:text-white" /></div>
+                                {(type !== 'habit') && <div className="flex-1"><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label><input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none text-sm dark:text-white" /></div>}
+                            </div>
+                            
                             {type === 'habit' && (<div><label className="block text-xs font-bold text-gray-400 uppercase mb-2">Frequency</label><div className="flex justify-between">{DAYS_OF_WEEK.map((d, i) => (<button key={i} type="button" onClick={() => toggleDay(i)} className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${frequency.includes(i) ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 dark:bg-dark-700 text-gray-400'}`}>{d}</button>))}</div></div>)}
                             <div><label className="block text-xs font-bold text-gray-400 uppercase mb-2">Icon</label><div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">{EMOJIS.map(e => <button key={e} type="button" onClick={() => setIcon(e)} className={`flex-shrink-0 w-10 h-10 flex items-center justify-center text-xl rounded-lg ${icon === e ? 'bg-indigo-100 dark:bg-dark-700 border-2 border-indigo-500' : 'bg-gray-50 dark:bg-dark-900 dark:text-white'}`}>{e}</button>)}</div></div>
                             <div><label className="block text-xs font-bold text-gray-400 uppercase mb-2">Color</label><div className="flex flex-wrap gap-3">{COLORS.map(c => <button key={c.name} type="button" onClick={() => setColor(c)} className={`w-8 h-8 rounded-full ${c.dot} ${color.name === c.name ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`} />)}</div></div>
@@ -351,6 +369,12 @@
 
             const getHabitProgress = (id) => { let count = 0; for(let d=1; d<=daysInMonth; d++) { const k = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; if(completions[k]?.includes(id)) count++; } return Math.round((count / daysInMonth) * 100); };
             
+            // Calculate active categories
+            const visibleCategories = useMemo(() => {
+                const active = new Set(habits.map(h => h.category || 'General'));
+                return ['All', ...CATEGORIES.slice(1).filter(c => active.has(c))];
+            }, [habits]);
+
             const todaysHabits = habits.filter(h => {
                 const type = h.type || (h.isTask ? 'task' : 'habit');
                 const catMatch = selectedCategory === 'All' || (h.category === selectedCategory) || (!h.category && selectedCategory === 'General');
@@ -440,9 +464,9 @@
                                 <div><h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}</h2><p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm">{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p></div>
                                 <div className="flex items-center gap-3"><button onClick={() => setIsReorderMode(!isReorderMode)} className={`p-2 rounded-lg transition-colors ${isReorderMode ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}><Sort size={20}/></button><div className="md:hidden"><button onClick={() => { setEditingHabit(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white p-2 rounded-lg shadow-sm"><Plus size={18} /></button></div></div>
                             </div>
-                            {/* Category Filter Pills */}
+                            {/* Category Filter Pills (Dynamic) */}
                             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-                                {CATEGORIES.map(c => (
+                                {visibleCategories.map(c => (
                                     <button key={c} onClick={() => setSelectedCategory(c)} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all whitespace-nowrap ${selectedCategory === c ? 'bg-gray-800 text-white dark:bg-white dark:text-black' : 'bg-white dark:bg-dark-700 text-gray-500 border border-gray-100 dark:border-dark-600'}`}>{c}</button>
                                 ))}
                             </div>
@@ -481,7 +505,7 @@
                                             <div className="flex items-center gap-2"><span className="text-lg">{h.icon}</span><span className={`text-sm font-bold truncate ${isDone ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'}`}>{h.name}</span></div>
                                             <div className="flex items-center gap-1">
                                                 {/* Focus Button */}
-                                                {!isDone && (type === 'habit' || type === 'task') && !isReorderMode && 
+                                                {!isDone && (type === 'habit' || type === 'task') && !isReorderMode && h.useTimer && 
                                                     <button onClick={(e) => { e.stopPropagation(); setActiveFocusHabit(h); }} className="p-1 text-gray-300 hover:text-indigo-500 transition-colors"><Play size={14} fill="currentColor" /></button>
                                                 }
                                                 {isHeroic && !isDone && <span className="text-[9px] font-black bg-gradient-to-r from-amber-400 to-orange-500 text-white px-1.5 py-0.5 rounded shadow-sm">HEROIC</span>}
