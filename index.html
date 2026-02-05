@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Precision</title>
+    <title>Habit OS Accurate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -120,7 +120,17 @@
             );
         };
 
-        // --- UPDATED: Strict logic to exclude Events/Birthdays ---
+        // --- HELPER: Is habit strictly due on date? ---
+        const isHabitDueOnDate = (h, date, dateKey) => {
+            if (h.type === 'birthday' || h.type === 'event') return false; // Ignore non-tasks
+            if (h.type === 'task') return h.targetDate === dateKey; // Task: Match date
+            
+            // Habit: Check Frequency (Default to ALL days if missing)
+            const freq = h.frequency || [0,1,2,3,4,5,6];
+            return freq.includes(date.getDay());
+        };
+
+        // --- UPDATED: Strict logic with Fallback Frequency ---
         const YearHeatmap = ({ completions, habits }) => {
             const heatmapRef = useRef(null);
             useEffect(() => { if (heatmapRef.current) heatmapRef.current.scrollLeft = heatmapRef.current.scrollWidth; }, [habits]);
@@ -133,16 +143,11 @@
                         const date = new Date(endDate); date.setDate(endDate.getDate() - (w * 7) - (6 - d));
                         const k = formatDateKey(date);
                         
-                        // Strict Denominator: Only Habits and Tasks
-                        const dueHabits = habits.filter(h => { 
-                            if (h.type === 'birthday' || h.type === 'event') return false; 
-                            if (h.type === 'task') return h.targetDate === k; 
-                            if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(date.getDay())) return true;
-                            return false; 
-                        });
-
-                        // Strict Numerator: Only Habits and Tasks completions
-                        const completedCount = (completions[k] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
+                        // Strict Denominator
+                        const dueHabits = habits.filter(h => isHabitDueOnDate(h, date, k));
+                        
+                        // Strict Numerator
+                        const completedCount = (completions[k] || []).filter(id => habits.some(h => h.id === id && isHabitDueOnDate(h, date, k))).length;
                         
                         const total = dueHabits.length || 1;
                         const val = dueHabits.length === 0 ? 0 : Math.min(completedCount / total, 1);
@@ -166,16 +171,11 @@
                 for (let i = days - 1; i >= 0; i--) {
                     const d = new Date(); d.setDate(today.getDate() - i); const dateKey = formatDateKey(d);
                     
-                    // Strict Denominator: Only Habits and Tasks
-                    const dueHabits = habits.filter(h => { 
-                        if (h.type === 'birthday' || h.type === 'event') return false; 
-                        if (h.type === 'task') return h.targetDate === dateKey; 
-                        if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(d.getDay())) return true;
-                        return false; 
-                    });
+                    // Strict Denominator
+                    const dueHabits = habits.filter(h => isHabitDueOnDate(h, d, dateKey));
 
-                    // Strict Numerator: Only Habits and Tasks completions
-                    const completedCount = (completions[dateKey] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
+                    // Strict Numerator
+                    const completedCount = (completions[dateKey] || []).filter(id => habits.some(h => h.id === id && isHabitDueOnDate(h, d, dateKey))).length;
                     
                     const totalDue = dueHabits.length || 1;
                     const value = dueHabits.length === 0 ? 0 : Math.min(completedCount / totalDue, 1);
@@ -419,7 +419,9 @@
                 
                 if (type === 'birthday') return isSameDayMonth(new Date(h.targetDate), selectedDate);
                 if (type === 'task' || type === 'event') return h.targetDate === selectedDateKey;
-                if (h.frequency && !h.frequency.includes(selectedDate.getDay())) return false;
+                // Default to ALL days if frequency is missing (backward compatibility)
+                const freq = h.frequency || [0,1,2,3,4,5,6];
+                if (type === 'habit' && !freq.includes(selectedDate.getDay())) return false;
                 return true;
             }).sort((a, b) => {
                 if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
