@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Clean</title>
+    <title>Habit OS Targets</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -76,6 +76,7 @@
         const Cake = p => <Icon {...p}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></Icon>;
         const Play = p => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>;
         const Pause = p => <Icon {...p}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></Icon>;
+        const Target = p => <Icon {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Icon>;
 
         // --- CONSTANTS ---
         const COLORS = [
@@ -110,7 +111,14 @@
             return streak;
         };
 
-        const MiniProgressBar = ({ percentage, colorClass }) => (<div className="w-full bg-gray-100 dark:bg-dark-700 rounded-full h-1.5 mt-3 overflow-hidden"><div className={`h-1.5 rounded-full transition-all duration-500 ease-out ${colorClass}`} style={{ width: `${percentage}%` }}></div></div>);
+        const MiniProgressBar = ({ value, max, colorClass }) => {
+            const percentage = Math.min((value / max) * 100, 100);
+            return (
+                <div className="w-full bg-gray-100 dark:bg-dark-700 rounded-full h-1.5 mt-3 overflow-hidden">
+                    <div className={`h-1.5 rounded-full transition-all duration-500 ease-out ${colorClass}`} style={{ width: `${percentage}%` }}></div>
+                </div>
+            );
+        };
 
         const YearHeatmap = ({ completions, habits }) => {
             const heatmapRef = useRef(null);
@@ -170,7 +178,6 @@
             );
         };
 
-        // --- FOCUS TIMER COMPONENT ---
         const FocusTimer = ({ habit, onClose, onComplete }) => {
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
@@ -211,6 +218,7 @@
             const [category, setCategory] = useState('General');
             const [difficulty, setDifficulty] = useState('easy');
             const [useTimer, setUseTimer] = useState(false);
+            const [monthlyGoal, setMonthlyGoal] = useState('');
             const [time, setTime] = useState('');
             const [frequency, setFrequency] = useState([0,1,2,3,4,5,6]); 
             const [targetDate, setTargetDate] = useState(formatDateKey(new Date()));
@@ -223,9 +231,10 @@
                         setCategory(initialData.category || 'General');
                         setDifficulty(initialData.difficulty || 'easy');
                         setUseTimer(!!initialData.useTimer);
+                        setMonthlyGoal(initialData.monthlyGoal || '');
                         setTime(initialData.time || ''); setFrequency(initialData.frequency || [0,1,2,3,4,5,6]); setTargetDate(initialData.targetDate || formatDateKey(new Date()));
                     } else {
-                        setName(''); setIcon(EMOJIS[0]); setColor(COLORS[11]); setType('habit'); setCategory('General'); setDifficulty('easy'); setUseTimer(false); setTime(''); setFrequency([0,1,2,3,4,5,6]);
+                        setName(''); setIcon(EMOJIS[0]); setColor(COLORS[11]); setType('habit'); setCategory('General'); setDifficulty('easy'); setUseTimer(false); setMonthlyGoal(''); setTime(''); setFrequency([0,1,2,3,4,5,6]);
                     }
                 }
             }, [isOpen, initialData]);
@@ -237,13 +246,12 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-dark-800 rounded-2xl shadow-xl w-full max-w-sm modal-animate overflow-hidden max-h-[90vh] overflow-y-auto">
                         <div className="px-6 py-4 border-b border-gray-100 dark:border-dark-700 flex justify-between items-center"><h3 className="font-bold text-gray-800 dark:text-gray-100">{initialData ? 'Edit' : 'New'}</h3><button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button></div>
-                        <form onSubmit={(e) => { e.preventDefault(); onSave({ id: initialData?.id, name, icon, color, type, category, difficulty, useTimer, time, frequency, targetDate }); onClose(); }} className="p-6 space-y-5">
+                        <form onSubmit={(e) => { e.preventDefault(); onSave({ id: initialData?.id, name, icon, color, type, category, difficulty, useTimer, monthlyGoal: parseInt(monthlyGoal) || 0, time, frequency, targetDate }); onClose(); }} className="p-6 space-y-5">
                             <div className="grid grid-cols-4 gap-1 bg-gray-100 dark:bg-dark-900 p-1 rounded-lg">
                                 {['habit', 'task', 'event', 'birthday'].map(t => (<button key={t} type="button" onClick={() => setType(t)} className={`py-2 rounded-md text-[10px] font-bold uppercase transition-all ${type === t ? 'bg-white dark:bg-dark-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`}>{t === 'habit' ? 'Routine' : t}</button>))}
                             </div>
                             <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Name</label><input autoFocus type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm dark:text-white" /></div>
                             
-                            {/* Category Selector */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Category</label>
                                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -254,14 +262,23 @@
                             </div>
 
                             {(type === 'habit' || type === 'task') && (
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Difficulty & Tools</label>
-                                <div className="flex gap-2 mb-3">
-                                    {['easy', 'medium', 'hard'].map(d => (<button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold border capitalize transition-all ${difficulty === d ? d==='hard' ? 'bg-yellow-50 border-yellow-500 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'border-gray-200 dark:border-dark-700 text-gray-400'}`}>{d==='hard'?'Heroic':d}</button>))}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Difficulty</label>
+                                    <div className="flex gap-2">
+                                        {['easy', 'medium', 'hard'].map(d => (<button key={d} type="button" onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold border capitalize transition-all ${difficulty === d ? d==='hard' ? 'bg-yellow-50 border-yellow-500 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-indigo-50 border-indigo-500 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400' : 'border-gray-200 dark:border-dark-700 text-gray-400'}`}>{d==='hard'?'Heroic':d}</button>))}
+                                    </div>
                                 </div>
-                                <div onClick={() => setUseTimer(!useTimer)} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${useTimer ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/20' : 'bg-gray-50 border-gray-200 dark:bg-dark-900 dark:border-dark-700'}`}>
-                                    <div className="flex items-center gap-2"><Clock size={16} className={useTimer ? 'text-indigo-500' : 'text-gray-400'} /><span className={`text-xs font-bold ${useTimer ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}>Enable Focus Timer</span></div>
-                                    <div className={`w-10 h-5 rounded-full relative transition-colors ${useTimer ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-dark-600'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${useTimer ? 'translate-x-5' : ''}`}></div></div>
+                                <div className="flex gap-3">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Monthly Goal (Opt)</label>
+                                        <input type="number" placeholder="e.g. 15 times" value={monthlyGoal} onChange={e => setMonthlyGoal(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl focus:outline-none text-sm dark:text-white" />
+                                    </div>
+                                    <div className="flex-1 flex items-end">
+                                        <div onClick={() => setUseTimer(!useTimer)} className={`w-full flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-colors ${useTimer ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'bg-gray-50 border-gray-200 dark:bg-dark-900 dark:border-dark-700 text-gray-500'}`}>
+                                            <div className="flex items-center gap-2"><Clock size={16} /><span className="text-xs font-bold">Timer</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             )}
@@ -367,7 +384,14 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDay = new Date(year, month, 1).getDay();
             const selectedDateKey = formatDateKey(selectedDate); const todayKey = formatDateKey(new Date());
 
-            const getHabitProgress = (id) => { let count = 0; for(let d=1; d<=daysInMonth; d++) { const k = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; if(completions[k]?.includes(id)) count++; } return Math.round((count / daysInMonth) * 100); };
+            const getMonthCompletionCount = (habitId) => {
+                let count = 0;
+                for(let d=1; d<=daysInMonth; d++) {
+                    const k = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    if(completions[k]?.includes(habitId)) count++;
+                }
+                return count;
+            };
             
             // Calculate active categories
             const visibleCategories = useMemo(() => {
@@ -438,7 +462,19 @@
                     <div className="w-80 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 hidden md:flex flex-col z-20">
                         <div className="p-6 border-b border-gray-100 dark:border-dark-700 flex items-center justify-between"><div className="flex items-center gap-3"><div className="bg-indigo-600 text-white p-2 rounded-lg"><Trophy size={20} /></div><div><h1 className="font-bold text-lg leading-tight dark:text-white">Habit OS</h1><p className="text-xs text-indigo-500 font-medium">{status === 'saving' ? 'Syncing...' : 'Cloud Active'}</p></div></div></div>
                         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 mx-4 mt-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30"><p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">Backup ID</p><p className="font-mono text-xs text-indigo-800 dark:text-indigo-300 break-all select-all cursor-pointer" onClick={() => navigator.clipboard.writeText(userId)}>{userId}</p><button onClick={() => {const c = prompt("Backup ID:"); if(c) {setUserId(c); window.location.reload();}}} className="text-[10px] text-indigo-500 underline mt-2">Restore?</button></div>
-                        <div className="flex-1 overflow-y-auto p-4 scrollbar-thin"><div className="flex justify-between items-end mb-4 px-2"><h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">All Items</h2><button onClick={() => { setEditingHabit(null); setIsModalOpen(true); }} className="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-dark-700 p-1 rounded"><Plus size={18} /></button></div><div className="space-y-3">{habits.filter(h => (!h.type || h.type === 'habit')).map(h => { const p = getHabitProgress(h.id); return (<div key={h.id} className="group p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-700 border border-transparent hover:border-gray-100 dark:hover:border-dark-600 transition-all"><div className="flex items-center justify-between mb-1"><div className="flex items-center gap-3"><span className="text-xl">{h.icon}</span><span className="text-sm font-medium dark:text-gray-200">{h.name}</span></div><div className="flex items-center gap-2"><span className="text-xs font-bold text-gray-400">{p}%</span><button onClick={() => { setEditingHabit(h); setIsModalOpen(true); }} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600"><Edit2 size={12} /></button></div></div><MiniProgressBar percentage={p} colorClass={h.color.bar} /></div>); })}</div></div>
+                        <div className="flex-1 overflow-y-auto p-4 scrollbar-thin"><div className="flex justify-between items-end mb-4 px-2"><h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">All Items</h2><button onClick={() => { setEditingHabit(null); setIsModalOpen(true); }} className="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-dark-700 p-1 rounded"><Plus size={18} /></button></div><div className="space-y-3">{habits.filter(h => (!h.type || h.type === 'habit')).map(h => { 
+                            const monthlyCount = getMonthCompletionCount(h.id);
+                            
+                            return (<div key={h.id} className="group p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-700 border border-transparent hover:border-gray-100 dark:hover:border-dark-600 transition-all"><div className="flex items-center justify-between mb-1"><div className="flex items-center gap-3"><span className="text-xl">{h.icon}</span><span className="text-sm font-medium dark:text-gray-200">{h.name}</span></div><div className="flex items-center gap-2"><span className="text-xs font-bold text-gray-400">{h.monthlyGoal > 0 ? `${monthlyCount} / ${h.monthlyGoal}` : ''}</span><button onClick={() => { setEditingHabit(h); setIsModalOpen(true); }} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600"><Edit2 size={12} /></button></div></div>
+                            
+                            {h.monthlyGoal > 0 ? (
+                                <MiniProgressBar value={monthlyCount} max={h.monthlyGoal} colorClass={h.color.bar} />
+                            ) : (
+                                <div className="mt-1 flex items-center text-[10px] text-gray-400 gap-1"><Fire size={12} className="text-orange-500" /> {calculateStreak(h.id, completions)} Day Streak</div>
+                            )}
+                            
+                            </div>); 
+                        })}</div></div>
                     </div>
 
                     {/* CENTER (Calendar) */}
