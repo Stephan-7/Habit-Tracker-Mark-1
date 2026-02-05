@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Daily Ratio</title>
+    <title>Habit OS Precision</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -120,6 +120,7 @@
             );
         };
 
+        // --- UPDATED: Strict logic to exclude Events/Birthdays ---
         const YearHeatmap = ({ completions, habits }) => {
             const heatmapRef = useRef(null);
             useEffect(() => { if (heatmapRef.current) heatmapRef.current.scrollLeft = heatmapRef.current.scrollWidth; }, [habits]);
@@ -132,19 +133,18 @@
                         const date = new Date(endDate); date.setDate(endDate.getDate() - (w * 7) - (6 - d));
                         const k = formatDateKey(date);
                         
-                        // Strict Calculation for DENOMINATOR (Total for THAT day)
+                        // Strict Denominator: Only Habits and Tasks
                         const dueHabits = habits.filter(h => { 
-                            if (h.type === 'birthday' || h.type === 'event') return false; // Exclude non-tasks
-                            if (h.type === 'task') return h.targetDate === k; // Task must be for this date
-                            // Habit: check frequency
+                            if (h.type === 'birthday' || h.type === 'event') return false; 
+                            if (h.type === 'task') return h.targetDate === k; 
                             if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(date.getDay())) return true;
                             return false; 
                         });
 
+                        // Strict Numerator: Only Habits and Tasks completions
                         const completedCount = (completions[k] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
-                        const total = dueHabits.length || 1;
                         
-                        // For display, if total was 0, percentage is 0 (or empty)
+                        const total = dueHabits.length || 1;
                         const val = dueHabits.length === 0 ? 0 : Math.min(completedCount / total, 1);
                         
                         weekData.push({ date: date, key: k, val: val, isFuture: date > new Date() });
@@ -166,20 +166,18 @@
                 for (let i = days - 1; i >= 0; i--) {
                     const d = new Date(); d.setDate(today.getDate() - i); const dateKey = formatDateKey(d);
                     
-                    // Strict Calculation for DENOMINATOR (Total for THAT day)
+                    // Strict Denominator: Only Habits and Tasks
                     const dueHabits = habits.filter(h => { 
-                        if (h.type === 'birthday' || h.type === 'event') return false; // Exclude non-tasks
-                        if (h.type === 'task') return h.targetDate === dateKey; // Task must be for this date
-                        // Habit: check frequency
+                        if (h.type === 'birthday' || h.type === 'event') return false; 
+                        if (h.type === 'task') return h.targetDate === dateKey; 
                         if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(d.getDay())) return true;
                         return false; 
                     });
 
-                    // Count completed valid items
+                    // Strict Numerator: Only Habits and Tasks completions
                     const completedCount = (completions[dateKey] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
                     
                     const totalDue = dueHabits.length || 1;
-                    // If no tasks were due that day, value is 0 (empty bar)
                     const value = dueHabits.length === 0 ? 0 : Math.min(completedCount / totalDue, 1);
                     
                     result.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, fullDate: d.toLocaleDateString(), value: value });
