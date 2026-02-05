@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Habit OS Smart Metrics</title>
+    <title>Habit OS Daily Ratio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -120,15 +120,10 @@
             );
         };
 
-        // --- UPDATED: Exclude Events/Birthdays from graphs ---
         const YearHeatmap = ({ completions, habits }) => {
             const heatmapRef = useRef(null);
             useEffect(() => { if (heatmapRef.current) heatmapRef.current.scrollLeft = heatmapRef.current.scrollWidth; }, [habits]);
             const data = useMemo(() => {
-                // Filter out events/birthdays for stats
-                const actionableHabits = habits.filter(h => (!h.type || h.type === 'habit' || h.type === 'task'));
-                if (actionableHabits.length === 0) return [];
-                
                 const weeks = 52; const grid = []; const today = new Date();
                 const dayOfWeek = today.getDay(); const endDate = new Date(today); endDate.setDate(today.getDate() + (6 - dayOfWeek));
                 for (let w = weeks - 1; w >= 0; w--) {
@@ -136,14 +131,23 @@
                     for (let d = 0; d < 7; d++) {
                         const date = new Date(endDate); date.setDate(endDate.getDate() - (w * 7) - (6 - d));
                         const k = formatDateKey(date);
-                        const dueHabits = actionableHabits.filter(h => { 
-                            if (h.type === 'task') return h.targetDate === k;
-                            if (h.frequency && !h.frequency.includes(date.getDay())) return false; 
-                            return true; 
+                        
+                        // Strict Calculation for DENOMINATOR (Total for THAT day)
+                        const dueHabits = habits.filter(h => { 
+                            if (h.type === 'birthday' || h.type === 'event') return false; // Exclude non-tasks
+                            if (h.type === 'task') return h.targetDate === k; // Task must be for this date
+                            // Habit: check frequency
+                            if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(date.getDay())) return true;
+                            return false; 
                         });
-                        const completedCount = (completions[k] || []).filter(id => actionableHabits.some(h => h.id === id)).length;
+
+                        const completedCount = (completions[k] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
                         const total = dueHabits.length || 1;
-                        weekData.push({ date: date, key: k, val: Math.min(completedCount / total, 1), isFuture: date > new Date() });
+                        
+                        // For display, if total was 0, percentage is 0 (or empty)
+                        const val = dueHabits.length === 0 ? 0 : Math.min(completedCount / total, 1);
+                        
+                        weekData.push({ date: date, key: k, val: val, isFuture: date > new Date() });
                     }
                     grid.unshift(weekData);
                 }
@@ -158,21 +162,27 @@
 
         const ConsistencyChart = ({ completions, habits }) => {
             const data = useMemo(() => {
-                // Filter out events/birthdays for stats
-                const actionableHabits = habits.filter(h => (!h.type || h.type === 'habit' || h.type === 'task'));
-                if (actionableHabits.length === 0) return [];
-                
                 const days = 30; const result = []; const today = new Date();
                 for (let i = days - 1; i >= 0; i--) {
                     const d = new Date(); d.setDate(today.getDate() - i); const dateKey = formatDateKey(d);
-                    const dueHabits = actionableHabits.filter(h => { 
-                        if (h.type === 'task') return h.targetDate === dateKey;
-                        if (h.frequency && !h.frequency.includes(d.getDay())) return false; 
-                        return true; 
+                    
+                    // Strict Calculation for DENOMINATOR (Total for THAT day)
+                    const dueHabits = habits.filter(h => { 
+                        if (h.type === 'birthday' || h.type === 'event') return false; // Exclude non-tasks
+                        if (h.type === 'task') return h.targetDate === dateKey; // Task must be for this date
+                        // Habit: check frequency
+                        if ((!h.type || h.type === 'habit') && h.frequency && h.frequency.includes(d.getDay())) return true;
+                        return false; 
                     });
-                    const completedCount = (completions[dateKey] || []).filter(id => actionableHabits.some(h => h.id === id)).length;
+
+                    // Count completed valid items
+                    const completedCount = (completions[dateKey] || []).filter(id => habits.some(h => h.id === id && (h.type === 'habit' || h.type === 'task' || !h.type))).length;
+                    
                     const totalDue = dueHabits.length || 1;
-                    result.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, fullDate: d.toLocaleDateString(), value: Math.min(completedCount / totalDue, 1) });
+                    // If no tasks were due that day, value is 0 (empty bar)
+                    const value = dueHabits.length === 0 ? 0 : Math.min(completedCount / totalDue, 1);
+                    
+                    result.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, fullDate: d.toLocaleDateString(), value: value });
                 }
                 return result;
             }, [completions, habits]);
